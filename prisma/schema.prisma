@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      Int               @id @default(autoincrement())
+  name                    String
+  email                   String            @unique
+  password                String
+  refreshToken            String?           @map("refresh_token")
+  createdAt               DateTime          @default(now()) @map("created_at")
+  lastUpdatedAt           DateTime          @updatedAt @map("last_updated_at")
+  userType                UserType          @map("user_type")
+  balance                 Int
+  transactions            UserTransaction[]
+  transactionsCreated     UserTransaction[] @relation(name: "transactionCreated")
+  transactionsLastUpdated UserTransaction[] @relation(name: "transactionLastUpdated")
+  bookCreated             Book[]            @relation(name: "bookCreated")
+  bookSold                Book[]            @relation(name: "bookSold")
+  bookLastUpdated         Book[]            @relation(name: "bookLastUpdated")
+  orders                  Order[]
+  orderCreated            Order[]           @relation(name: "orderCreated")
+  orderLastUpdated        Order[]           @relation(name: "orderLastUpdated")
+  orderLinesCreated       OrderLines[]      @relation(name: "orderLinesCreated")
+  orderLinesLastUpdated   OrderLines[]      @relation(name: "orderLinesLastUpdated")
+
+  @@map("users")
+}
+
+model UserTransaction {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  user          User     @relation(fields: [userId], references: [id])
+  createdAt     DateTime @default(now()) @map("created_at")
+  lastUpdatedAt DateTime @updatedAt @map("last_updated_at")
+  createdBy     Int      @map("created_by")
+  created       User     @relation(name: "transactionCreated", fields: [createdBy], references: [id])
+  lastUpdatedBy Int      @map("last_updated_by")
+  lastUpdated   User     @relation(name: "transactionLastUpdated", fields: [lastUpdatedBy], references: [id])
+  coins         Int
+
+  @@map("user_transactions")
+}
+
+model Book {
+  id            Int          @id @default(autoincrement())
+  name          String
+  coins         Int
+  quantity      Int
+  image         String
+  sellerId      Int          @map("seller_id")
+  seller        User         @relation(name: "bookSold", fields: [sellerId], references: [id])
+  createdAt     DateTime     @default(now()) @map("created_at")
+  lastUpdatedAt DateTime     @updatedAt @map("last_updated_at")
+  createdBy     Int          @map("created_by")
+  created       User         @relation(name: "bookCreated", fields: [createdBy], references: [id])
+  lastUpdatedBy Int          @map("last_updated_by")
+  lastUpdated   User         @relation(name: "bookLastUpdated", fields: [lastUpdatedBy], references: [id])
+  orderLines    OrderLines[]
+
+  @@map("books")
+}
+
+model Order {
+  id            Int          @id @default(autoincrement())
+  userId        Int
+  user          User         @relation(fields: [userId], references: [id])
+  status        OrderStatus
+  createdAt     DateTime     @default(now()) @map("created_at")
+  lastUpdatedAt DateTime     @updatedAt @map("last_updated_at")
+  lines         OrderLines[]
+  createdBy     Int          @map("created_by")
+  created       User         @relation(name: "orderCreated", fields: [createdBy], references: [id])
+  lastUpdatedBy Int          @map("last_updated_by")
+  lastUpdated   User         @relation(name: "orderLastUpdated", fields: [lastUpdatedBy], references: [id])
+
+  @@map("orders")
+}
+
+model OrderLines {
+  id            Int      @id @default(autoincrement())
+  bookId        Int
+  book          Book     @relation(fields: [bookId], references: [id])
+  orderId       Int
+  order         Order    @relation(fields: [orderId], references: [id])
+  quantity      Int
+  coins         Int
+  createdAt     DateTime @default(now()) @map("created_at")
+  lastUpdatedAt DateTime @updatedAt @map("last_updated_at")
+  createdBy     Int      @map("created_by")
+  created       User     @relation(name: "orderLinesCreated", fields: [createdBy], references: [id])
+  lastUpdatedBy Int      @map("last_updated_by")
+  lastUpdated   User     @relation(name: "orderLinesLastUpdated", fields: [lastUpdatedBy], references: [id])
+
+  @@map("order_lines")
+}
+
+enum UserType {
+  Seller
+  Customer
+}
+
+enum OrderStatus {
+  Success
+  Cancelled
+}
